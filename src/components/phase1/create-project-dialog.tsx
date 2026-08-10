@@ -42,7 +42,6 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
 
   const [bibleFile, setBibleFile] = useState<File | null>(null);
   const [uploadingBible, setUploadingBible] = useState(false);
-  const [bibleUploaded, setBibleUploaded] = useState(false);
   const [skipPhase1, setSkipPhase1] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -76,8 +75,9 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
         method: "POST",
         body: formData,
       });
-      if (uploadRes.ok) {
-        setBibleUploaded(true);
+      if (!uploadRes.ok) {
+        setUploadingBible(false);
+        return;
       }
       setUploadingBible(false);
     }

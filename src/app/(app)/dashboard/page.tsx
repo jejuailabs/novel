@@ -9,16 +9,12 @@ export default async function DashboardPage() {
 
   if (!user) return null;
 
-  const [projectsRes, metricsRes] = await Promise.all([
+  const [projectsRes] = await Promise.all([
     supabase
       .from("nv_projects")
       .select("id, title, genre, phase, target_length, updated_at")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
-    supabase
-      .from("nv_metrics")
-      .select("input_tokens, output_tokens, cost_krw")
-      .eq("project_id", ""),
   ]);
 
   const projects = projectsRes.data ?? [];

@@ -17,8 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProgressRing } from "./progress-ring";
 
-type NodeStatus = "확정" | "진화중" | "보류" | "폐기";
-
 const STATUS_STYLE: Record<string, string> = {
   확정: "bg-teal/15 text-teal",
   진화중: "bg-violet/15 text-violet",
