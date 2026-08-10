@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -13,6 +14,7 @@ import {
   BarChart3,
   Settings,
   Shield,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
@@ -51,28 +53,51 @@ export function Sidebar({
 }) {
   const { t } = useT();
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isPending) setNavigatingTo(null);
+  }, [isPending]);
 
   function NavLink({ item }: { item: NavItem }) {
     const active =
       pathname === item.href || pathname.startsWith(item.href + "/");
+    const isLoading = navigatingTo === item.href && isPending;
     return (
       <Link
         href={item.href}
+        onClick={(e) => {
+          if (active) return;
+          e.preventDefault();
+          setNavigatingTo(item.href);
+          startTransition(() => {
+            router.push(item.href);
+          });
+        }}
         className={cn(
-          "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+          "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150",
+          "active:scale-[0.97] active:bg-primary/20",
           active
             ? "bg-primary/15 text-foreground"
+            : isLoading
+            ? "bg-primary/10 text-foreground"
             : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
         )}
       >
-        <item.icon
-          className={cn(
-            "h-4 w-4 shrink-0",
-            active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-          )}
-        />
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+        ) : (
+          <item.icon
+            className={cn(
+              "h-4 w-4 shrink-0",
+              active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+            )}
+          />
+        )}
         <span className="truncate">{t(item.label)}</span>
-        {active && (
+        {active && !isLoading && (
           <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary shadow-glow" />
         )}
       </Link>
@@ -112,19 +137,32 @@ export function Sidebar({
           {isAdmin && (
             <Link
               href="/admin"
+              onClick={(e) => {
+                if (pathname.startsWith("/admin")) return;
+                e.preventDefault();
+                setNavigatingTo("/admin");
+                startTransition(() => { router.push("/admin"); });
+              }}
               className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150",
+                "active:scale-[0.97] active:bg-pink/20",
                 pathname.startsWith("/admin")
                   ? "bg-pink/15 text-foreground"
+                  : navigatingTo === "/admin" && isPending
+                  ? "bg-pink/10 text-foreground"
                   : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
               )}
             >
-              <Shield
-                className={cn(
-                  "h-4 w-4 shrink-0",
-                  pathname.startsWith("/admin") ? "text-pink" : ""
-                )}
-              />
+              {navigatingTo === "/admin" && isPending ? (
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-pink" />
+              ) : (
+                <Shield
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    pathname.startsWith("/admin") ? "text-pink" : ""
+                  )}
+                />
+              )}
               <span>{t("nav.admin")}</span>
             </Link>
           )}

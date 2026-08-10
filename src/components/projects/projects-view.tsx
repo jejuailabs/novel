@@ -108,8 +108,16 @@ export function ProjectsView({ projects: initial }: { projects: Project[] }) {
       {showCreate && (
         <CreateProjectDialog
           onClose={() => setShowCreate(false)}
-          onCreated={() => {
+          onCreated={(project) => {
             setShowCreate(false);
+            setProjects((prev) => [
+              {
+                ...project,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              ...prev,
+            ]);
             router.refresh();
           }}
         />

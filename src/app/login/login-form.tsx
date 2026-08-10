@@ -49,16 +49,49 @@ export function LoginForm() {
       ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
       : undefined;
 
+  React.useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type === "oauth-complete") {
+        window.location.href = next;
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [next]);
+
   async function signInGoogle() {
     setLoading("google");
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
+    const popupRedirect = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}&popup=1`;
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo },
+      options: {
+        redirectTo: popupRedirect,
+        skipBrowserRedirect: true,
+      },
     });
     if (error) {
       setError(error.message);
       setLoading(null);
+      return;
+    }
+    if (data?.url) {
+      const w = 500;
+      const h = 600;
+      const left = window.screenX + (window.innerWidth - w) / 2;
+      const top = window.screenY + (window.innerHeight - h) / 2;
+      const popup = window.open(
+        data.url,
+        "google-login",
+        `width=${w},height=${h},left=${left},top=${top},popup=yes`
+      );
+      const timer = setInterval(() => {
+        if (popup?.closed) {
+          clearInterval(timer);
+          setLoading(null);
+        }
+      }, 500);
     }
   }
 
