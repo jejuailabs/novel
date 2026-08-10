@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme */
+    --background: 235 40% 97%;
+    --foreground: 232 30% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 232 30% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 232 30% 14%;
+
+    --primary: 258 90% 62%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 235 30% 92%;
+    --secondary-foreground: 232 30% 20%;
+
+    --muted: 235 30% 92%;
+    --muted-foreground: 232 12% 45%;
+
+    --accent: 258 90% 96%;
+    --accent-foreground: 258 60% 40%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 235 25% 88%;
+    --input: 235 25% 85%;
+    --ring: 258 90% 62%;
+
+    --ff-violet: 258 90% 62%;
+    --ff-cyan: 190 95% 45%;
+    --ff-pink: 322 82% 55%;
+    --ff-teal: 165 80% 40%;
+
+    --radius: 0.85rem;
+  }
+
+  .dark {
+    /* FUTURE FLOW dark theme */
+    --background: 232 32% 7%;
+    --foreground: 232 30% 92%;
+
+    --card: 231 28% 11%;
+    --card-foreground: 232 30% 92%;
+
+    --popover: 231 30% 9%;
+    --popover-foreground: 232 30% 92%;
+
+    --primary: 258 92% 68%;
+    --primary-foreground: 232 40% 8%;
+
+    --secondary: 231 24% 16%;
+    --secondary-foreground: 232 25% 85%;
+
+    --muted: 231 22% 15%;
+    --muted-foreground: 232 15% 60%;
+
+    --accent: 231 30% 18%;
+    --accent-foreground: 258 90% 85%;
+
+    --destructive: 0 70% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 231 22% 20%;
+    --input: 231 22% 22%;
+    --ring: 258 92% 68%;
+
+    --ff-violet: 258 92% 68%;
+    --ff-cyan: 190 95% 58%;
+    --ff-pink: 322 85% 66%;
+    --ff-teal: 165 82% 52%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .bg-app-gradient {
+    background:
+      radial-gradient(60% 50% at 80% 0%, hsl(var(--ff-violet) / 0.14), transparent 60%),
+      radial-gradient(50% 40% at 0% 10%, hsl(var(--ff-cyan) / 0.10), transparent 55%),
+      hsl(var(--background));
+  }
+  .text-gradient {
+    background: linear-gradient(90deg, hsl(var(--ff-violet)), hsl(var(--ff-cyan)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px);
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+}
