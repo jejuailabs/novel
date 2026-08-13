@@ -47,7 +47,7 @@ export async function callClaude(opts: CallOptions) {
 
   const duration = Date.now() - start;
   const text =
-    response.content[0].type === "text" ? response.content[0].text : "";
+    response.content[0]?.type === "text" ? response.content[0].text : "";
 
   return {
     text,

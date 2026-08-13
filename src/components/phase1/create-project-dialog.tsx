@@ -43,11 +43,13 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
   const [bibleFile, setBibleFile] = useState<File | null>(null);
   const [uploadingBible, setUploadingBible] = useState(false);
   const [skipPhase1, setSkipPhase1] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleCreate() {
     if (!title.trim()) return;
     setLoading(true);
+    setError(null);
 
     const res = await fetch("/api/projects", {
       method: "POST",
@@ -60,6 +62,7 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
     });
 
     if (!res.ok) {
+      setError(await readError(res, "프로젝트 생성에 실패했습니다."));
       setLoading(false);
       return;
     }
@@ -76,7 +79,14 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
         body: formData,
       });
       if (!uploadRes.ok) {
+        setError(
+          await readError(
+            uploadRes,
+            "성경 변환에 실패했습니다. 파일 없이 생성하거나 다시 시도하세요."
+          )
+        );
         setUploadingBible(false);
+        setLoading(false);
         return;
       }
       setUploadingBible(false);
@@ -93,6 +103,15 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
 
     setLoading(false);
     onCreated(project);
+  }
+
+  async function readError(res: Response, fallback: string): Promise<string> {
+    try {
+      const data = await res.json();
+      return data?.error ? String(data.error) : fallback;
+    } catch {
+      return fallback;
+    }
   }
 
   return (
@@ -292,6 +311,12 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
                   )}
                 </Button>
               </div>
+
+              {error && (
+                <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
 
               {!bibleFile && (
                 <p className="text-center text-xs text-muted-foreground">
