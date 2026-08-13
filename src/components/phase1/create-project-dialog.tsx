@@ -220,7 +220,7 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
               <input
                 ref={fileRef}
                 type="file"
-                accept=".txt,.md,.json,.pdf"
+                accept=".txt,.md,.json"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -256,7 +256,7 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
                 >
                   <Upload className="h-8 w-8" />
                   <span className="text-sm font-medium">
-                    파일 선택 (TXT, MD, JSON, PDF)
+                    파일 선택 (TXT, MD, JSON)
                   </span>
                   <span className="text-xs">
                     기획서, 캐릭터 설정, 시놉시스 등

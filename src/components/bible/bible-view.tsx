@@ -157,7 +157,7 @@ export function BibleView({ projects }: { projects: Project[] }) {
             </option>
           ))}
         </select>
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button size="sm" onClick={handleSave} disabled={saving || !bible}>
           {saving ? (
             <Loader2 className="mr-1 h-3 w-3 animate-spin" />
           ) : (
@@ -181,7 +181,7 @@ export function BibleView({ projects }: { projects: Project[] }) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,.md,.json,.pdf"
+          accept=".txt,.md,.json"
           className="hidden"
           onChange={handleFileSelect}
         />
@@ -222,6 +222,31 @@ export function BibleView({ projects }: { projects: Project[] }) {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : !bible ? (
+                <div className="flex h-[60vh] flex-col items-center justify-center gap-4 rounded-md border border-dashed border-border text-center">
+                  <Book className="h-10 w-10 text-muted-foreground/40" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      아직 이 프로젝트의 성경이 없습니다.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      기획서·설정 파일(.txt, .md, .json)을 업로드하면 AI가 성경으로
+                      변환합니다.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="gap-1.5"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    {uploading ? "변환 중..." : "성경 파일 업로드"}
+                  </Button>
                 </div>
               ) : (
                 <textarea

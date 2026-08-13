@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Plus, Sparkles, FileText, Loader2, ChevronDown, Target, CheckCircle2, XCircle, X } from "lucide-react";
+import { Send, Plus, Sparkles, FileText, Loader2, ChevronDown, Target, CheckCircle2, XCircle, X, Upload, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,9 +38,23 @@ interface Node {
 }
 
 interface BibleData {
-  concept: string | null;
-  production: string | null;
-  log: string | null;
+  concept_bible?: Record<string, unknown> | null;
+  production_bible?: Record<string, unknown> | null;
+  creation_log?: Record<string, unknown> | null;
+}
+
+function isEmptyBible(o?: Record<string, unknown> | null): boolean {
+  return !o || Object.keys(o).length === 0;
+}
+
+function bibleSectionText(o?: Record<string, unknown> | null): string | null {
+  if (isEmptyBible(o)) return null;
+  return Object.entries(o!)
+    .map(
+      ([k, v]) =>
+        `${k}: ${typeof v === "string" ? v : JSON.stringify(v, null, 2)}`
+    )
+    .join("\n\n");
 }
 
 interface JudgmentCheck {
@@ -84,6 +98,8 @@ export function Phase1View({ projects }: { projects: Project[] }) {
   const [showCreate, setShowCreate] = useState(false);
   const [bible, setBible] = useState<BibleData | null>(null);
   const [bibleLoading, setBibleLoading] = useState(false);
+  const [bibleUploading, setBibleUploading] = useState(false);
+  const bibleFileRef = useRef<HTMLInputElement>(null);
   const [showJudgment, setShowJudgment] = useState(false);
   const [judgmentLoading, setJudgmentLoading] = useState(false);
   const [judgmentResult, setJudgmentResult] = useState<JudgmentResult | null>(null);
@@ -110,6 +126,41 @@ export function Phase1View({ projects }: { projects: Project[] }) {
       setBibleLoading(false);
     }
   }, []);
+
+  async function handleBibleUpload(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 같은 파일을 다시 선택할 수 있도록 초기화
+    if (!file || !selectedProject) return;
+    if (
+      !window.confirm(
+        `"${file.name}" 파일을 성경으로 변환합니다. 기존 성경이 있으면 덮어쓰입니다. 계속할까요?`
+      )
+    )
+      return;
+
+    setBibleUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("projectId", selectedProject.id);
+      const res = await fetch("/api/ai/parse-bible-upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`성경 변환 실패: ${err.error ?? "알 수 없는 오류"}`);
+      } else {
+        await fetchBible(selectedProject.id);
+      }
+    } catch {
+      alert("업로드 중 오류가 발생했습니다.");
+    } finally {
+      setBibleUploading(false);
+    }
+  }
 
   const handleStatusChange = useCallback(
     async (node: Node, newStatus: string) => {
@@ -500,37 +551,98 @@ export function Phase1View({ projects }: { projects: Project[] }) {
       {/* Right: Bible preview */}
       <div className="flex w-64 shrink-0 flex-col gap-3">
         <Card className="flex-1 border-border/50">
-          <CardHeader className="py-3">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 py-3">
             <CardTitle className="flex items-center gap-2 text-sm">
               <FileText className="h-4 w-4" />
               {t("dashboard.biblePreview")}
             </CardTitle>
+            <input
+              ref={bibleFileRef}
+              type="file"
+              accept=".txt,.md,.json"
+              className="hidden"
+              onChange={handleBibleUpload}
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!selectedProject || bibleUploading}
+              onClick={() => bibleFileRef.current?.click()}
+              title="파일을 업로드해 성경으로 변환합니다 (기존 성경은 덮어쓰기)"
+            >
+              {bibleUploading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Upload className="h-3 w-3" />
+              )}
+              {bibleUploading ? "변환 중" : "업로드"}
+            </Button>
           </CardHeader>
           <CardContent className="scrollbar-thin overflow-y-auto text-xs text-muted-foreground">
             {!selectedProject ? (
               <p>프로젝트를 먼저 선택하세요.</p>
             ) : bibleLoading ? (
               <Loader2 className="mx-auto h-4 w-4 animate-spin" />
-            ) : !bible || (!bible.concept && !bible.production && !bible.log) ? (
-              <p>아직 성경 데이터가 없습니다. 노드를 확정하면 자동으로 반영됩니다.</p>
+            ) : !bible ||
+              (isEmptyBible(bible.concept_bible) &&
+                isEmptyBible(bible.production_bible) &&
+                isEmptyBible(bible.creation_log)) ? (
+              <div className="space-y-3 py-2">
+                <p>아직 성경 데이터가 없습니다.</p>
+                <p className="text-muted-foreground/70">
+                  기획서·설정 파일을 업로드해 성경으로 변환하거나, 브레인스토밍으로
+                  노드를 확정하면 자동으로 반영됩니다.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1.5"
+                  disabled={bibleUploading}
+                  onClick={() => bibleFileRef.current?.click()}
+                >
+                  {bibleUploading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="h-3.5 w-3.5" />
+                  )}
+                  성경 파일 업로드
+                </Button>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-center gap-1.5 text-xs text-primary hover:underline"
+                  onClick={() => router.push("/bible")}
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  성경 편집기 열기
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
-                {bible.concept && (
+                {bibleSectionText(bible.concept_bible) && (
                   <div>
                     <h4 className="mb-1 font-semibold text-foreground">컨셉 성경</h4>
-                    <p className="whitespace-pre-wrap">{bible.concept}</p>
+                    <p className="whitespace-pre-wrap">
+                      {bibleSectionText(bible.concept_bible)}
+                    </p>
                   </div>
                 )}
-                {bible.production && (
+                {bibleSectionText(bible.production_bible) && (
                   <div>
-                    <h4 className="mb-1 font-semibold text-foreground">프로덕션 성경</h4>
-                    <p className="whitespace-pre-wrap">{bible.production}</p>
+                    <h4 className="mb-1 font-semibold text-foreground">
+                      프로덕션 성경
+                    </h4>
+                    <p className="whitespace-pre-wrap">
+                      {bibleSectionText(bible.production_bible)}
+                    </p>
                   </div>
                 )}
-                {bible.log && (
+                {bibleSectionText(bible.creation_log) && (
                   <div>
                     <h4 className="mb-1 font-semibold text-foreground">로그</h4>
-                    <p className="whitespace-pre-wrap">{bible.log}</p>
+                    <p className="whitespace-pre-wrap">
+                      {bibleSectionText(bible.creation_log)}
+                    </p>
                   </div>
                 )}
               </div>
