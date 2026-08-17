@@ -3,6 +3,7 @@
 import { Coins, BookOpen, Wallet } from "lucide-react";
 import { AppearanceToggle } from "@/components/appearance-toggle";
 import { UserMenu } from "@/components/app/user-menu";
+import { ProjectSwitcher } from "@/components/app/project-switcher";
 import { formatKRW, formatTokens } from "@/lib/utils";
 
 export interface TopbarStats {
@@ -33,6 +34,8 @@ export function Topbar({
           <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
         )}
       </div>
+
+      <ProjectSwitcher />
 
       <div className="ml-auto flex items-center gap-2">
         <Stat icon={<Coins className="h-3.5 w-3.5 text-cyan" />} value={formatTokens(stats.tokens)} />

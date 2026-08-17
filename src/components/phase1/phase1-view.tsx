@@ -15,6 +15,10 @@ import {
 import { useT } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import { CreateProjectDialog } from "./create-project-dialog";
+import {
+  useSelectedProject,
+  notifyProjectsChanged,
+} from "@/lib/selected-project";
 
 interface Project {
   id: string;
@@ -87,9 +91,7 @@ const NODE_STATUSES = ["확정", "진화중", "보류", "폐기"] as const;
 export function Phase1View({ projects }: { projects: Project[] }) {
   const { t } = useT();
   const router = useRouter();
-  const [selectedProject, setSelectedProject] = useState<Project | null>(
-    projects[0] ?? null
-  );
+  const { selectedProject, selectProject } = useSelectedProject(projects);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -246,7 +248,7 @@ export function Phase1View({ projects }: { projects: Project[] }) {
       body: JSON.stringify({ phase: 2 }),
     });
     if (res.ok) {
-      router.push(`/projects/${selectedProject.id}/phase2`);
+      router.push("/phase2");
     }
   }
 
@@ -337,8 +339,10 @@ export function Phase1View({ projects }: { projects: Project[] }) {
   }
 
   function handleProjectCreated(project: Project) {
-    setSelectedProject(project);
+    selectProject(project);
+    notifyProjectsChanged();
     setShowCreate(false);
+    router.refresh();
   }
 
   const statusColor: Record<string, string> = {
@@ -360,25 +364,6 @@ export function Phase1View({ projects }: { projects: Project[] }) {
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Project selector */}
-        <select
-          className="rounded-md border border-border bg-card px-3 py-2 text-sm"
-          value={selectedProject?.id ?? ""}
-          onChange={(e) => {
-            const p = projects.find((p) => p.id === e.target.value);
-            if (p) setSelectedProject(p);
-          }}
-        >
-          {projects.length === 0 && (
-            <option value="">{t("common.empty")}</option>
-          )}
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-        </select>
 
         <div className="scrollbar-thin flex-1 space-y-2 overflow-y-auto">
           {nodes.map((node) => (

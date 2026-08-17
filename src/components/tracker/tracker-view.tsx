@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Save, Target, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSelectedProject } from "@/lib/selected-project";
 
 interface Project {
   id: string;
@@ -11,9 +12,7 @@ interface Project {
 }
 
 export function TrackerView({ projects }: { projects: Project[] }) {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(
-    projects[0] ?? null
-  );
+  const { selectedProject } = useSelectedProject(projects);
   const [tracker, setTracker] = useState<Record<string, unknown> | null>(null);
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
@@ -60,20 +59,6 @@ export function TrackerView({ projects }: { projects: Project[] }) {
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex items-center gap-4">
-        <select
-          className="rounded-md border border-border bg-card px-3 py-2 text-sm"
-          value={selectedProject?.id ?? ""}
-          onChange={(e) => {
-            const p = projects.find((p) => p.id === e.target.value);
-            if (p) setSelectedProject(p);
-          }}
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-        </select>
         <Button size="sm" onClick={handleSave} disabled={saving}>
           {saving ? (
             <Loader2 className="mr-1 h-3 w-3 animate-spin" />

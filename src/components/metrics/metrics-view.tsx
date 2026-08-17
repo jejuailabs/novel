@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { BarChart3, Coins, Zap, FileText, Loader2, Users, GitBranch } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSelectedProject } from "@/lib/selected-project";
 
 interface Project {
   id: string;
@@ -38,9 +39,7 @@ interface TrackerData {
 }
 
 export function MetricsView({ projects }: { projects: Project[] }) {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(
-    projects[0] ?? null
-  );
+  const { selectedProject } = useSelectedProject(projects);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [loading, setLoading] = useState(false);
   const [tracker, setTracker] = useState<TrackerData | null>(null);
@@ -101,21 +100,6 @@ export function MetricsView({ projects }: { projects: Project[] }) {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <select
-        className="w-64 rounded-md border border-border bg-card px-3 py-2 text-sm"
-        value={selectedProject?.id ?? ""}
-        onChange={(e) => {
-          const p = projects.find((p) => p.id === e.target.value);
-          if (p) setSelectedProject(p);
-        }}
-      >
-        {projects.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.title}
-          </option>
-        ))}
-      </select>
-
       {loading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

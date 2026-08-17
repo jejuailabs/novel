@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ImportManuscriptDialog } from "./import-manuscript-dialog";
+import { useSelectedProject } from "@/lib/selected-project";
 
 interface Project {
   id: string;
@@ -36,9 +37,7 @@ interface Episode {
 }
 
 export function Phase2View({ projects }: { projects: Project[] }) {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(
-    projects[0] ?? null
-  );
+  const { selectedProject } = useSelectedProject(projects);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [selectedEp, setSelectedEp] = useState<string | null>(null);
   const [epContent, setEpContent] = useState("");
@@ -298,22 +297,6 @@ export function Phase2View({ projects }: { projects: Project[] }) {
     <div className="flex h-full gap-4">
       {/* Left: Episodes list */}
       <div className="flex w-64 shrink-0 flex-col gap-3">
-        <select
-          className="rounded-md border border-border bg-card px-3 py-2 text-sm"
-          value={selectedProject?.id ?? ""}
-          onChange={(e) => {
-            const p = projects.find((p) => p.id === e.target.value);
-            if (p) setSelectedProject(p);
-          }}
-        >
-          {projects.length === 0 && <option value="">프로젝트 없음</option>}
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-        </select>
-
         <Button onClick={handleGenerate} disabled={streaming || !selectedProject}>
           {streaming ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

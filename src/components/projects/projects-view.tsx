@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CreateProjectDialog } from "@/components/phase1/create-project-dialog";
+import {
+  storeProjectId,
+  notifyProjectsChanged,
+} from "@/lib/selected-project";
 
 interface Project {
   id: string;
@@ -35,6 +39,7 @@ export function ProjectsView({ projects: initial }: { projects: Project[] }) {
     const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
     if (res.ok) {
       setProjects((prev) => prev.filter((p) => p.id !== id));
+      notifyProjectsChanged();
     }
   }
 
@@ -61,7 +66,11 @@ export function ProjectsView({ projects: initial }: { projects: Project[] }) {
             <Card
               key={p.id}
               className="cursor-pointer border-border/50 transition-colors hover:border-primary/30"
-              onClick={() => router.push("/phase1")}
+              onClick={() => {
+                // 카드 클릭 = 이 프로젝트를 전역 선택하고 해당 단계로 이동
+                storeProjectId(p.id);
+                router.push(p.phase === 2 ? "/phase2" : "/phase1");
+              }}
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
@@ -118,6 +127,8 @@ export function ProjectsView({ projects: initial }: { projects: Project[] }) {
               },
               ...prev,
             ]);
+            storeProjectId(project.id);
+            notifyProjectsChanged();
             router.refresh();
           }}
         />

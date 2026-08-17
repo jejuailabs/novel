@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useT } from "@/lib/i18n";
+import { useSelectedProject } from "@/lib/selected-project";
 
 interface Project {
   id: string;
@@ -22,9 +23,7 @@ interface Revision {
 
 export function BibleView({ projects }: { projects: Project[] }) {
   const { t } = useT();
-  const [selectedProject, setSelectedProject] = useState<Project | null>(
-    projects[0] ?? null
-  );
+  const { selectedProject } = useSelectedProject(projects);
   const [bible, setBible] = useState<{
     concept_bible: Record<string, unknown>;
     production_bible: Record<string, unknown>;
@@ -143,20 +142,6 @@ export function BibleView({ projects }: { projects: Project[] }) {
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex items-center gap-4">
-        <select
-          className="rounded-md border border-border bg-card px-3 py-2 text-sm"
-          value={selectedProject?.id ?? ""}
-          onChange={(e) => {
-            const p = projects.find((p) => p.id === e.target.value);
-            if (p) setSelectedProject(p);
-          }}
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-        </select>
         <Button size="sm" onClick={handleSave} disabled={saving || !bible}>
           {saving ? (
             <Loader2 className="mr-1 h-3 w-3 animate-spin" />

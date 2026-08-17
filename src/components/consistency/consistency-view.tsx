@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSelectedProject } from "@/lib/selected-project";
 
 interface Project {
   id: string;
@@ -51,9 +52,7 @@ interface CheckResult {
 type ResolutionOption = "edit_episode" | "edit_bible" | "edit_tracker";
 
 export function ConsistencyView({ projects }: { projects: Project[] }) {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(
-    projects[0] ?? null
-  );
+  const { selectedProject } = useSelectedProject(projects);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [checks, setChecks] = useState<Record<string, CheckResult>>({});
   const [loading, setLoading] = useState(false);
@@ -139,23 +138,6 @@ export function ConsistencyView({ projects }: { projects: Project[] }) {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex items-center gap-4">
-        <select
-          className="rounded-md border border-border bg-card px-3 py-2 text-sm"
-          value={selectedProject?.id ?? ""}
-          onChange={(e) => {
-            const p = projects.find((p) => p.id === e.target.value);
-            if (p) setSelectedProject(p);
-          }}
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-3">
         <Card className="border-border/50">
