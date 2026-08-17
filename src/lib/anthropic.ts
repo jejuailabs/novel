@@ -8,8 +8,8 @@ const anthropic = new Anthropic({
 });
 
 export const MODELS = {
-  sonnet: "claude-sonnet-4-20250514",
-  haiku: "claude-haiku-4-20250414",
+  sonnet: "claude-sonnet-5",
+  haiku: "claude-haiku-4-5",
 } as const;
 
 type ModelKey = keyof typeof MODELS;

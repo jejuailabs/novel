@@ -1,17 +1,18 @@
 const EXCHANGE_RATE = 1380;
 
 const PRICING: Record<string, { input: number; output: number; cacheRead: number; cacheWrite: number }> = {
-  "claude-sonnet-4-20250514": {
+  // 2026-08-31까지 인트로 가격($2/$10), 이후 $3/$15
+  "claude-sonnet-5": {
     input: 3.0 / 1_000_000,
     output: 15.0 / 1_000_000,
     cacheRead: 0.3 / 1_000_000,
     cacheWrite: 3.75 / 1_000_000,
   },
-  "claude-haiku-4-20250414": {
-    input: 0.80 / 1_000_000,
-    output: 4.0 / 1_000_000,
-    cacheRead: 0.08 / 1_000_000,
-    cacheWrite: 1.0 / 1_000_000,
+  "claude-haiku-4-5": {
+    input: 1.0 / 1_000_000,
+    output: 5.0 / 1_000_000,
+    cacheRead: 0.1 / 1_000_000,
+    cacheWrite: 1.25 / 1_000_000,
   },
 };
 
