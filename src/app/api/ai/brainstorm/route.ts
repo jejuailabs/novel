@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
     ],
     messages: [{ role: "user", content: userPrompt }],
-    maxTokens: 4096,
+    maxTokens: 8192,
     stream: true,
   });
 

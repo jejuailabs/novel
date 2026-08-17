@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       },
     ],
     messages: [{ role: "user", content: userPrompt }],
-    maxTokens: 8192,
+    maxTokens: 16000,
     stream: true,
   });
 
