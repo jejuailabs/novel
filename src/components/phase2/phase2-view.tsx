@@ -12,10 +12,12 @@ import {
   AlertTriangle,
   Download,
   Save,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ImportManuscriptDialog } from "./import-manuscript-dialog";
 
 interface Project {
   id: string;
@@ -50,6 +52,7 @@ export function Phase2View({ projects }: { projects: Project[] }) {
   const [nextBu, setNextBu] = useState(1);
   const [nextHwa, setNextHwa] = useState(1);
   const [exporting, setExporting] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [lastSavedContent, setLastSavedContent] = useState("");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -320,19 +323,32 @@ export function Phase2View({ projects }: { projects: Project[] }) {
           {nextBu}부 {nextHwa}화 생성
         </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExport}
-          disabled={exporting || !selectedProject}
-        >
-          {exporting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-4 w-4" />
-          )}
-          내보내기
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => setShowImport(true)}
+            disabled={!selectedProject}
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            가져오기
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={handleExport}
+            disabled={exporting || !selectedProject}
+          >
+            {exporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            내보내기
+          </Button>
+        </div>
 
         <div className="scrollbar-thin flex-1 overflow-y-auto">
           {/* Overall progress */}
@@ -469,6 +485,14 @@ export function Phase2View({ projects }: { projects: Project[] }) {
           )}
         </div>
       </Card>
+
+      {showImport && selectedProject && (
+        <ImportManuscriptDialog
+          projectId={selectedProject.id}
+          onClose={() => setShowImport(false)}
+          onImported={() => fetchEpisodes(selectedProject.id)}
+        />
+      )}
 
       {/* Right: Consistency check */}
       <div className="flex w-72 shrink-0 flex-col gap-3">

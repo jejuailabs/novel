@@ -41,15 +41,22 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
   const [loading, setLoading] = useState(false);
 
   const [bibleFile, setBibleFile] = useState<File | null>(null);
-  const [uploadingBible, setUploadingBible] = useState(false);
+  const [manuscriptFiles, setManuscriptFiles] = useState<File[]>([]);
+  const [stage, setStage] = useState<
+    "idle" | "creating" | "bible" | "manuscript" | "tracker"
+  >("idle");
   const [skipPhase1, setSkipPhase1] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const manuscriptRef = useRef<HTMLInputElement>(null);
+
+  const busy = loading || stage !== "idle";
 
   async function handleCreate() {
     if (!title.trim()) return;
     setLoading(true);
     setError(null);
+    setStage("creating");
 
     const res = await fetch("/api/projects", {
       method: "POST",
@@ -64,13 +71,14 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
     if (!res.ok) {
       setError(await readError(res, "프로젝트 생성에 실패했습니다."));
       setLoading(false);
+      setStage("idle");
       return;
     }
 
     const project = await res.json();
 
     if (bibleFile) {
-      setUploadingBible(true);
+      setStage("bible");
       const formData = new FormData();
       formData.append("file", bibleFile);
       formData.append("projectId", project.id);
@@ -85,14 +93,48 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
             "성경 변환에 실패했습니다. 파일 없이 생성하거나 다시 시도하세요."
           )
         );
-        setUploadingBible(false);
         setLoading(false);
+        setStage("idle");
         return;
       }
-      setUploadingBible(false);
     }
 
-    if (skipPhase1 && bibleFile) {
+    if (manuscriptFiles.length > 0) {
+      setStage("manuscript");
+      const formData = new FormData();
+      for (const f of manuscriptFiles) formData.append("files", f);
+      const importRes = await fetch(
+        `/api/projects/${project.id}/episodes/import`,
+        { method: "POST", body: formData }
+      );
+      if (!importRes.ok) {
+        setError(
+          await readError(importRes, "원고 업로드에 실패했습니다.")
+        );
+        setLoading(false);
+        setStage("idle");
+        return;
+      }
+
+      setStage("tracker");
+      const trackerRes = await fetch("/api/ai/rebuild-tracker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: project.id }),
+      });
+      if (!trackerRes.ok) {
+        setError(
+          await readError(
+            trackerRes,
+            "캐논 트래커 구축에 실패했습니다. 트래커 메뉴에서 다시 시도할 수 있습니다."
+          )
+        );
+        // 원고는 이미 들어갔으므로 중단하지 않고 계속 진행한다.
+      }
+    }
+
+    // 원고가 있으면 바로 집필 단계로. 없으면 기존 체크박스 정책을 따른다.
+    if (manuscriptFiles.length > 0 || (skipPhase1 && bibleFile)) {
       await fetch(`/api/projects/${project.id}/phase`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -102,6 +144,7 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
     }
 
     setLoading(false);
+    setStage("idle");
     onCreated(project);
   }
 
@@ -264,7 +307,73 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
                 </button>
               )}
 
-              {bibleFile && (
+              {/* 기존 원고 업로드 (연재 이어가기) */}
+              <input
+                ref={manuscriptRef}
+                type="file"
+                accept=".txt,.md"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length > 0)
+                    setManuscriptFiles((prev) => [...prev, ...files]);
+                  e.target.value = "";
+                }}
+              />
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  기존에 쓴 원고가 있다면 함께 업로드하세요. AI가 원고를
+                  분석해 캐논 트래커를 구축하고, 다음 회차부터 바로 이어서
+                  집필할 수 있습니다.
+                </p>
+
+                {manuscriptFiles.length > 0 && (
+                  <div className="max-h-32 space-y-1 overflow-y-auto">
+                    {manuscriptFiles.map((f, i) => (
+                      <div
+                        key={`${f.name}-${i}`}
+                        className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2 py-1.5"
+                      >
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span className="min-w-0 flex-1 truncate text-xs">
+                          {f.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setManuscriptFiles((prev) =>
+                              prev.filter((_, idx) => idx !== i)
+                            )
+                          }
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => manuscriptRef.current?.click()}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-2.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground active:scale-[0.98]"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  기존 원고 추가 (TXT, MD · 여러 개 가능 · 예: 1부_3화.md)
+                </button>
+
+                {manuscriptFiles.length > 0 && (
+                  <p className="text-xs text-primary">
+                    원고 {manuscriptFiles.length}개 업로드 — 파일명에서 부/화를
+                    인식하며, 생성 후 바로 집필 단계(Phase 2)로 진입합니다.
+                  </p>
+                )}
+              </div>
+
+              {bibleFile && manuscriptFiles.length === 0 && (
                 <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50">
                   <input
                     type="checkbox"
@@ -289,21 +398,25 @@ export function CreateProjectDialog({ onClose, onCreated }: Props) {
                   variant="outline"
                   className="flex-1"
                   onClick={() => setStep(1)}
-                  disabled={loading || uploadingBible}
+                  disabled={busy}
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" />
                   이전
                 </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleCreate}
-                  disabled={loading || uploadingBible}
-                >
-                  {loading || uploadingBible ? (
+                <Button className="flex-1" onClick={handleCreate} disabled={busy}>
+                  {busy ? (
                     <>
                       <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                      {uploadingBible ? "성경 변환 중…" : "생성 중…"}
+                      {stage === "bible"
+                        ? "성경 변환 중…"
+                        : stage === "manuscript"
+                        ? "원고 업로드 중…"
+                        : stage === "tracker"
+                        ? "캐논 트래커 구축 중…"
+                        : "생성 중…"}
                     </>
+                  ) : manuscriptFiles.length > 0 ? (
+                    "생성 + 원고 분석 + 이어쓰기 준비"
                   ) : bibleFile ? (
                     "프로젝트 생성 + 성경 변환"
                   ) : (
