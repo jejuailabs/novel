@@ -13,18 +13,19 @@ interface ParsedName {
 }
 
 // 파일명에서 부/화를 추출한다. 지원 패턴:
-//   "1부_3화", "1부 3화", "1-3", "3화", "ep3", "episode_3", "003"
+//   "1부_3화", "1부 3화", "1-3", "ep-1-3", "3화", "ep3", "episode_3", "003"
 function parseEpisodeNumber(filename: string): ParsedName {
   const base = filename.replace(/\.[^.]+$/, "");
 
   const buHwa = base.match(/(\d+)\s*부[\s_\-.]*(\d+)\s*화/);
   if (buHwa) return { bu: parseInt(buHwa[1]), hwa: parseInt(buHwa[2]) };
 
-  const dashPair = base.match(/^(\d+)\s*[-_.]\s*(\d+)$/);
-  if (dashPair) return { bu: parseInt(dashPair[1]), hwa: parseInt(dashPair[2]) };
-
   const hwaOnly = base.match(/(\d+)\s*화/);
   if (hwaOnly) return { bu: null, hwa: parseInt(hwaOnly[1]) };
+
+  // 파일명 끝의 숫자 쌍을 부-화로 해석: "1-3", "ep-1-3", "s1_03"
+  const pair = base.match(/(\d+)\s*[-_.]\s*(\d+)\s*$/);
+  if (pair) return { bu: parseInt(pair[1]), hwa: parseInt(pair[2]) };
 
   const ep = base.match(/ep(?:isode)?[\s_\-.]*(\d+)/i);
   if (ep) return { bu: null, hwa: parseInt(ep[1]) };
